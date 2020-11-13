@@ -1,11 +1,11 @@
 ---
 paths:
   /archive:
-    frequency: 7
-    keep: 90
+    frequency: 24
+    keep: 2160
   /home:
-    frequency: 1
-    keep: 30
+    frequency: 24
+    keep: 720
   /scratch:
-    frequency: 1
-    keep: 7
+    frequency: 8
+    keep: 168

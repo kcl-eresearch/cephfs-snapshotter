@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import os
 import subprocess
 import sys
 import yaml
 
 # Get filesystem type at path
-# Because Python doesn"t have a statfs function
+# Because Python doesn't have a statfs function
 def fs_type(path):
     if not os.path.isdir(path):
         return False
@@ -19,6 +20,8 @@ def fs_type(path):
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", default="/etc/cephfs_snapshot.yaml")
 args = parser.parse_args()
+
+snap_tstr = "%Y-%m-%d-%H%M%S%z"
 
 try:
     with open(args.c) as fh:
@@ -40,3 +43,9 @@ for path in config["paths"].keys():
     if path_fs != "ceph":
         sys.stderr.write("Path '%s' is of type '%s' not 'ceph' - skipping\n" % (path, path_fs))
         continue
+
+    snap_path = "%s/.snap" % (path,)
+    for dirpath, dirnames, filenames in os.walk(snap_path):
+        print(dirpath)
+        print(dirnames)
+        print(filenames)
