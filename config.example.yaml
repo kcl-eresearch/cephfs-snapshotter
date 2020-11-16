@@ -1,6 +1,9 @@
 ---
+# Used as shared lock and last-run file
 last_file: /ceph/system/ceph_snapshot.last
 
+# Directories and how often they should be snapshotted, and for how long snapshots should be kept
+# Times are in hours
 paths:
   /archive:
     frequency: 48
