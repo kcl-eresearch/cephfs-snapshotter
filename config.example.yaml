@@ -1,7 +1,9 @@
 ---
+last_file: /ceph/system/ceph_snapshot.last
+
 paths:
   /archive:
-    frequency: 24
+    frequency: 48
     keep: 2160
   /home:
     frequency: 24
