@@ -10,6 +10,10 @@ import subprocess
 import sys
 import yaml
 
+# Print with pid prefix
+def pid_print(message):
+    print("[%d] %s" % (os.getpid(), message))
+
 # Get filesystem type at path
 # Because Python doesn't have a statfs function
 def fs_type(path):
@@ -25,26 +29,28 @@ parser.add_argument("-c", default="/etc/cephfs_snapshot.yaml")
 args = parser.parse_args()
 
 timestamp_format = "%Y-%m-%d-%H%M%S%z"
+now = datetime.datetime.now(datetime.timezone.utc)
+now_str = now.strftime(timestamp_format)
+
+pid_print("Starting at %s" % (now_str,))
 
 try:
     with open(args.c) as fh:
         config = yaml.safe_load(fh)
 except Exception as e:
-    sys.stderr.write("Cannot load configuration from %s: %s\n" % (args.c, e))
+    pid_print("Cannot load configuration from %s: %s" % (args.c, e))
     sys.exit(1)
 
 if not "paths" in config:
-    sys.stderr.write("Configuration does not contain any paths\n")
+    pid_print("Configuration does not contain any paths")
     sys.exit(1)
-
-now = datetime.datetime.now(datetime.timezone.utc)
-now_str = now.strftime(timestamp_format)
 
 if os.path.exists(config["last_file"]):
     try:
         with open(config["last_file"]) as fh:
             last_data = yaml.safe_load(fh)
             if (now - datetime.datetime.strptime(last_data["time"], timestamp_format)).total_seconds() < 3600:
+                pid_print("Nothing to do yet - exiting.")
                 sys.exit(0)
 
     except Exception as e:
@@ -54,18 +60,19 @@ with open(config["last_file"], "w") as fh:
     try:
         yaml.dump({"host": socket.gethostname(), "time": now_str, "pid": os.getpid()}, fh, default_flow_style=False)
     except Exception as e:
-        die("Couldn't create last_file %s: %s" % (config["last_file"], e))
+        pid_print("Couldn't create last_file %s: %s" % (config["last_file"], e))
+        sys.exit(1)
 
 regex_tstr = re.compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}[0-9]{2}[0-9]{2}[+-][0-9]{4}$')
 
 for path in config["paths"].keys():
     path_fs = fs_type(path)
     if not path_fs:
-        sys.stderr.write("Path '%s' does not exist or cannot determine type - skipping\n" % (path,))
+        pid_print("Path '%s' does not exist or cannot determine type - skipping" % (path,))
         continue
 
     if path_fs != "ceph":
-        sys.stderr.write("Path '%s' is of type '%s' not 'ceph' - skipping\n" % (path, path_fs))
+        pid_print("Path '%s' is of type '%s' not 'ceph' - skipping" % (path, path_fs))
         continue
 
     snap_path = "%s/.snap" % (path,)
@@ -77,12 +84,14 @@ for path in config["paths"].keys():
         if regex_tstr.match(x.name):
             snap_age = (now - datetime.datetime.strptime(x.name, timestamp_format)).total_seconds() / 3600
             if snap_age > config["paths"][path]["keep"]:
-                print("Delete %s" % (x,))
+                pid_print("Delete %s" % (x,))
                 os.rmdir(x)
             elif snap_age < config["paths"][path]["frequency"]:
                 need_snap = False
 
     if need_snap:
         snap_path = "%s/.snap/%s" % (path, now_str)
-        print("Create %s" % snap_path)
+        pid_print("Create %s" % snap_path)
         os.mkdir(snap_path)
+
+pid_print("Complete - exiting.")
