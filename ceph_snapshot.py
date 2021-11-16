@@ -82,7 +82,7 @@ for path in config["paths"].keys():
     for x in p.iterdir():
 
         if regex_tstr.match(x.name):
-            snap_age = (now - datetime.datetime.strptime(x.name, timestamp_format)).total_seconds() / 3600
+            snap_age = (now - datetime.datetime.strptime(x.name, timestamp_format).replace(minute=0, second=0, microsecond=0)).total_seconds() / 3600
             if snap_age > config["paths"][path]["keep"]:
                 pid_print("Delete %s" % (x,))
                 os.rmdir(x)
