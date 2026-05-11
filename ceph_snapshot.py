@@ -66,6 +66,7 @@ with open(config["last_file"], "w") as fh:
 regex_tstr = re.compile('^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}[0-9]{2}[0-9]{2}[+-][0-9]{4}$')
 
 for path in config["paths"].keys():
+    path = os.path.realpath(path)
     path_fs = fs_type(path)
     if not path_fs:
         pid_print("Path '%s' does not exist or cannot determine type - skipping" % (path,))
